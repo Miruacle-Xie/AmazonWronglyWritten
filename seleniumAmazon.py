@@ -148,7 +148,7 @@ def main():
     df = df.iloc[:, [0, 1]]
     print(df)
     chrome_options = Options()
-    chrome_options.add_argument('--incognito')  # 无痕模式
+    # chrome_options.add_argument('--incognito')  # 无痕模式
     chrome_options.add_argument('--headless')  # 不显示浏览器
     driver = webdriver.Chrome(chrome_options=chrome_options)
     # driver = webdriver.Chrome()
