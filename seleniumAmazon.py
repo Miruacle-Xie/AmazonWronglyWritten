@@ -4,6 +4,8 @@ Created on Tue Sep 20 14:23:56 2022
 
 @author: Administrator
 """
+import sys
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
@@ -15,34 +17,63 @@ import re
 import os
 import time
 import random
+DEBUG = False
 
 
 def amazonDeliverInit(driver):
     url = "https://www.amazon.com"
     try:
+        logtext = []
         driver.get(url)
+        logtext.append("driver.get(https://www.amazon.com)")
         content = driver.page_source
+        logtext.append("driver.page_source")
         if "New York 10041" not in content:
-            driver.find_element_by_xpath('//*[@id="nav-packard-glow-loc-icon"]').click()
-            WebDriverWait(driver, 10).until(
+            logtext.append("开始设置配送地址...")
+            tmplog = driver.find_element_by_xpath('//*[@id="nav-packard-glow-loc-icon"]').click()
+            logtext.append(tmplog)
+            tmplog = WebDriverWait(driver, 10).until(
                 EC.visibility_of_element_located((By.XPATH, '//*[@id="GLUXZipUpdateInput"]')))  # 元素是否可见
-            driver.find_element_by_xpath('//*[@id="GLUXZipUpdateInput"]').send_keys("10041")
+            logtext.append(tmplog)
+            tmplog = driver.find_element_by_xpath('//*[@id="GLUXZipUpdateInput"]').send_keys("10041")
+            logtext.append(tmplog)
             time.sleep(1)
-            driver.find_element_by_xpath('//*[@id="GLUXZipUpdate"]/span/input').click()
+            tmplog = driver.find_element_by_xpath('//*[@id="GLUXZipUpdate"]/span/input').click()
+            logtext.append(tmplog)
             time.sleep(3)
             driver.refresh()
             content1 = driver.page_source
-            fd = open("1.txt", mode='w', encoding="utf8")
-            fd.write(content1)
-            fd.close()
+            logtext.append(content1)
+            # fd = open("1.txt", mode='w', encoding="utf8")
+            # fd.write(content1)
+            # fd.close()
             if "New York 10041" not in content1:
                 print("设置地址失败")
                 return False
             else:
                 print("地址设为10041成功")
                 return True
-    except:
+        else:
+            print("初始化成功")
+            return True
+    except Exception as e:
         print("设置地址异常")
+        repr(e)
+        logtext.append(repr(e))
+        exepath = sys.executable
+        print(exepath)
+        exepath = os.path.dirname(exepath)
+        print(exepath)
+        print(logtext)
+
+        logContent = exepath + '\\' + "logContent.txt"
+        fd = open(logContent, mode='w', encoding="utf8")
+        fd.write(content)
+        fd.close()
+        logFile = exepath + '\\' + "log.txt"
+        fd = open(logFile, mode='w', encoding="utf8")
+        fd.write(str(logtext))
+        fd.close()
         return False
 
 
@@ -64,9 +95,9 @@ def getAmazonResult(driver, subjectName):
         driver.find_element_by_xpath('//*[@id="twotabsearchtextbox"]').send_keys(Keys.ENTER)
         pageSource = driver.page_source
 # =============================================================================
-        fd = open("2.txt", mode='w', encoding="utf8")
-        fd.write(pageSource)
-        fd.close()
+#         fd = open("2.txt", mode='w', encoding="utf8")
+#         fd.write(pageSource)
+#         fd.close()
 # =============================================================================
         return True, pageSource
     except Exception as e:
@@ -113,7 +144,7 @@ def checkmodify(driver, df, filepath):
                 tmpFlag = 1
                 contrastSubjectName(correctWritten[1], df[df.columns.values[0]][i], tmpFlag, matchReslut, uncorrectWord)
             else:
-                print(correctWritten)
+                # print(correctWritten)
                 amaShowReslut.append(df[df.columns.values[1]][i].capitalize())
                 tmpFlag = 2
                 contrastSubjectName(df[df.columns.values[1]][i], df[df.columns.values[0]][i], tmpFlag, matchReslut, uncorrectWord)
@@ -142,14 +173,22 @@ def checkmodify(driver, df, filepath):
 
 
 def main():
+    global DEBUG
     filepath = input("\n文件路径：\n")
+    # filepath = "F:\\JetBrains\\affirm_amazon\\selenium\\0905-快主题-拆分结果.xlsx"
+    if " --DEBUG" in filepath:
+        DEBUG = True
+        filepath = filepath.replace(" --DEBUG", "")
+        print("filepath:{}".format(filepath))
     filepath = filepath.replace("\"", "").replace("\'", "")
     df = getSubjectName(filepath)
     df = df.iloc[:, [0, 1]]
     print(df)
     chrome_options = Options()
-    # chrome_options.add_argument('--incognito')  # 无痕模式
-    chrome_options.add_argument('--headless')  # 不显示浏览器
+    if not DEBUG:
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36"')
+    # chrome_options.add_argument('--incognito')
     driver = webdriver.Chrome(chrome_options=chrome_options)
     # driver = webdriver.Chrome()
     if amazonDeliverInit(driver):
