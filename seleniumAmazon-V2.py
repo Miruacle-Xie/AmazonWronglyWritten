@@ -5,7 +5,7 @@ Created on Tue Sep 20 14:23:56 2022
 @author: Administrator
 """
 import sys
-
+import html
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
@@ -145,13 +145,14 @@ def checkmodify(driver, df, filepath):
         print('{:30s}{}'.format('getAmazonResult-end', time.strftime('%Y-%m-%d %H:%M:%S')))
         # print('{:30s}{}'.format('contrastSubjectName-start', time.strftime('%Y-%m-%d %H:%M:%S')))
         if accessFlag:
-            correctWritten = re.search(r'<span class="a-size-medium a-text-italic">(.*?) shirt</span>', pageSource)
+            # correctWritten = re.search(r'<span class="a-size-medium a-text-italic">(.*?) shirt</span>', pageSource)
+            correctWritten = re.search(r'<span class="a-size-medium a-text-italic">(.*?) .?shirt</span>', pageSource)
             searchResult = re.search(r"<span>(.*) results for</span>|<span>.* of (.*) results for</span>", pageSource)
             productNumReslut.append(searchResult[1])
             if correctWritten is not None:
-                amaShowReslut.append(correctWritten[1])
+                amaShowReslut.append(html.unescape(correctWritten[1]))
                 tmpFlag = 1
-                contrastSubjectName(correctWritten[1], df[df.columns.values[0]][i], tmpFlag, matchReslut, uncorrectWord)
+                contrastSubjectName(html.unescape(correctWritten[1]), df[df.columns.values[0]][i], tmpFlag, matchReslut, uncorrectWord)
             else:
                 # print(correctWritten)
                 amaShowReslut.append(df[df.columns.values[1]][i].capitalize())
@@ -175,7 +176,7 @@ def checkmodify(driver, df, filepath):
     reportpath = os.path.splitext(filepath)[0] + "-亚马逊检测报告" + ".xlsx"
     writer = pd.ExcelWriter(reportpath)
     # header = None：数据不含列名，index=False：不显示行索引（名字）
-    df.to_excel(writer, header=None, index=False)
+    df.to_excel(writer, index=False)
     writer.save()
     time_end = time.time()
     driver.quit()
@@ -205,6 +206,7 @@ def main():
     # driver = webdriver.Chrome(options=chrome_options)
 
     # driver = webdriver.Chrome()
+    print("初始化地址中...")
     if amazonDeliverInit(driver):
         print("即将开始...")
         checkmodify(driver, df, filepath)
